@@ -7,14 +7,18 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class NetworkdiscoveryServiceApplication {
 
     public static void main(String[] args) {
-
         String broadcastIp = "192.168.229.255";
         String ipRange = "192.168.229.";
 
-        NetworkDiscoveryService service = new NetworkDiscoveryService();
-        service.queryOthers();
-//        Thread discService = new Thread(service);
-//        discService.start();
+        if (args.length == 2) {
+            broadcastIp = args[0];
+            ipRange = args[1];
+        }
+
+        NetworkDiscoveryService service = new NetworkDiscoveryService(broadcastIp,ipRange);
+
+        Thread discService = new Thread(service);
+        discService.start();
 
         //SpringApplication.run(NetworkdiscoveryclientApplication.class, args);
 
