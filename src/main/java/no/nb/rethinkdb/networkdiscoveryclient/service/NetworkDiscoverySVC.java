@@ -4,10 +4,9 @@ import no.nb.rethinkdb.networkdiscoveryclient.model.ClientItem;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * Created by oddb on 22.01.18.
@@ -25,15 +24,18 @@ public class NetworkDiscoverySVC implements Runnable {
     private String myIpAddress = "undefined";
     private DatagramSocket socket = null;
     private List<InetAddress> inetAddresses;
+    private ReentrantLock lock;
 
 
     public NetworkDiscoverySVC(String broadcastIp, String ipRange) {
+        lock = new ReentrantLock();
+
         this.broadcastIp = broadcastIp;
         this.ipRange = ipRange;
         myId = new Random().nextLong();
         try {
             List<InetAddress> inetAddresses = NetworkInterfaceResolver.resolveAddresses();
-            for (InetAddress adr: inetAddresses) {
+            for (InetAddress adr : inetAddresses) {
                 if (adr.getHostAddress().contains(ipRange)) {
                     myIpAddress = adr.getHostAddress();
                     break;
@@ -64,14 +66,35 @@ public class NetworkDiscoverySVC implements Runnable {
         return false;
     }
 
+    private void sortServerList() {
+        try {
+            lock.lock();
+            List<ClientItem> collect = otherClients
+                .stream()
+                .sorted(Comparator.comparingLong(ClientItem::getTimestamp))
+                .collect(Collectors.toList());
+            otherClients = collect;
+        } finally {
+            lock.unlock();
+        }
+
+    }
+
     public String getServersAsList() {
 
         String servers = "";
-        synchronized (otherClients) {
+
+        try {
+            lock.lock();
             for (ClientItem ci : otherClients) {
                 servers += ci.getIpAddress() + ";";
             }
+        } finally {
+            if (lock.isLocked()) {
+                lock.unlock();
+            }
         }
+
         return servers;
     }
 
@@ -79,9 +102,16 @@ public class NetworkDiscoverySVC implements Runnable {
 
         String servers = "<h3>I am: " + myIpAddress + "</h3><br>";
         servers += "<UL>";
-        synchronized (otherClients) {
+        try {
+            lock.lock();
             for (ClientItem ci : otherClients) {
                 servers += "<LI>" + ci.getIpAddress() + "</LI>";
+            }
+        } catch (Exception e) {
+
+        } finally {
+            if (lock.isLocked()) {
+                lock.unlock();
             }
         }
         servers += "</UL>";
@@ -100,7 +130,8 @@ public class NetworkDiscoverySVC implements Runnable {
 
     private void cleanupOldServersFromList() {
 
-        synchronized (otherClients) {
+        try {
+            lock.lock();
             long timeInMillis = getTimeInSeconds();
             List<ClientItem> removeList = new ArrayList<>();
             for (ClientItem ci : otherClients) {
@@ -113,7 +144,12 @@ public class NetworkDiscoverySVC implements Runnable {
                 System.out.println("Removing old dead item: " + ci.getIpAddress());
                 otherClients.remove(ci);
             }
+        } catch (Exception e) {
 
+        } finally {
+            if (lock.isLocked()) {
+                lock.unlock();
+            }
         }
     }
 
@@ -158,7 +194,8 @@ public class NetworkDiscoverySVC implements Runnable {
                         continue;
                     }
                     boolean foundItem = false;
-                    synchronized (otherClients) {
+                    try {
+                        lock.lock();
                         for (ClientItem item : otherClients) {
                             if (item.getIpAddress().equalsIgnoreCase(hostaddr)) {
                                 item.setTimestamp(getTimeInSeconds());
@@ -169,6 +206,12 @@ public class NetworkDiscoverySVC implements Runnable {
                         if (!foundItem) {
                             ClientItem clientItem = new ClientItem(hostaddr, getTimeInSeconds());
                             otherClients.add(clientItem);
+                        }
+                    } catch (Exception e) {
+
+                    }finally {
+                        if (lock.isLocked()) {
+                            lock.unlock();
                         }
                     }
                 }
