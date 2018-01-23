@@ -30,11 +30,13 @@ public class NetworkDiscoveryBroadcaster implements Runnable {
 
     public static long extractMasterNumberFromString(String s) {
         String[] split = s.split(":");
+
         if (split.length > 1) {
             try {
-                long l = Long.parseLong(split[1]);
+                long l = Long.parseLong(split[1].trim());
                 return l;
             } catch (NumberFormatException e) {
+                System.out.println("formatexception: " + e.getMessage());
                 return 0;
             }
         }

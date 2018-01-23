@@ -20,13 +20,13 @@ public class NetworkDiscoverySVCTest {
         long timestamp = Calendar.getInstance().getTimeInMillis();
         long currentTimestamp = Calendar.getInstance().getTimeInMillis();
 
-        ClientItem item = new ClientItem("whatever", timestamp);
+        ClientItem item = new ClientItem("whatever", timestamp, 10);
         assertFalse(BuddiesRepository.shouldRemoveClient(item,currentTimestamp));
 
-        ClientItem oldItem = new ClientItem("whatever", timestamp-60);
+        ClientItem oldItem = new ClientItem("whatever", timestamp-60,10);
         assertTrue(BuddiesRepository.shouldRemoveClient(oldItem,currentTimestamp));
 
-        ClientItem itemFromTheFuture = new ClientItem("whatever", timestamp+600);
+        ClientItem itemFromTheFuture = new ClientItem("whatever", timestamp+600,10);
         assertFalse(BuddiesRepository.shouldRemoveClient(itemFromTheFuture,currentTimestamp));
 
     }

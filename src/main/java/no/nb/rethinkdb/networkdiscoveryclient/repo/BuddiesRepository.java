@@ -21,6 +21,13 @@ public class BuddiesRepository {
     public static final String IDENTITY_STRING = "rethinkDB_identityString:";
     private static final int SERVER_MAX_LIFETIME = 60;
 
+    public List<ClientItem> getOtherClients() {
+        return otherClients;
+    }
+
+    public BuddiesRepository() {
+        this.lock = new ReentrantLock();
+    }
 
     public static long getTimeInSeconds() {
 
@@ -70,7 +77,7 @@ public class BuddiesRepository {
         return servers;
     }
 
-    public void addOrUpdateItem(String hostaddr) {
+    public void addOrUpdateItem(String hostaddr, long id) {
         try {
             lock.lock();
             boolean foundItem = false;
@@ -82,7 +89,7 @@ public class BuddiesRepository {
                 }
             }
             if (!foundItem) {
-                ClientItem clientItem = new ClientItem(hostaddr, getTimeInSeconds());
+                ClientItem clientItem = new ClientItem(hostaddr, getTimeInSeconds(), id);
                 otherClients.add(clientItem);
             }
         } catch (Exception e) {

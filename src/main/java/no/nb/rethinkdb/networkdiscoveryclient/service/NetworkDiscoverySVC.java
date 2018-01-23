@@ -104,7 +104,8 @@ public class NetworkDiscoverySVC implements Runnable, AutoCloseable {
                     if (requestIsMe(hostaddr)) {
                         continue;
                     }
-                    buddiesRepository.addOrUpdateItem(hostaddr);
+                    long id = NetworkDiscoveryBroadcaster.extractMasterNumberFromString(data);
+                    buddiesRepository.addOrUpdateItem(hostaddr,id);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);

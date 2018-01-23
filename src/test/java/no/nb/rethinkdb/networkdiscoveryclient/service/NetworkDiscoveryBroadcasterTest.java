@@ -17,5 +17,9 @@ public class NetworkDiscoveryBroadcasterTest {
         String message = NetworkDiscoverySVC.IDENTITY_STRING + number;
 
         assertEquals(number, NetworkDiscoveryBroadcaster.extractMasterNumberFromString(message));
+
+
+        long l = Long.parseLong("8673563963366590599");
+        assertTrue(l>0);
     }
 }

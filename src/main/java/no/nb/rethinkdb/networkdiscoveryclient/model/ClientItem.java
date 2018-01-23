@@ -8,10 +8,20 @@ public class ClientItem {
 
     private String ipAddress;
     private long timestamp;
+    private long id;
 
-    public ClientItem(String ipAddress, long timestamp) {
+    public ClientItem(String ipAddress, long timestamp, long id) {
         this.ipAddress = ipAddress;
         this.timestamp = timestamp;
+        this.id = id;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getIpAddress() {
