@@ -19,7 +19,7 @@ public class NetworkDiscoveryBroadcaster implements Runnable {
     public static final String IDENTITY_STRING = "rethinkDB_identityString:";
     public static final String YOU_MAY_JOIN = "rethinkDB_you_may_join:";
 
-    private final int DISCOVERY_BROADCAST_TIME_IN_MILISECONDS = 15000;
+    public static final int DISCOVERY_BROADCAST_TIME_IN_MILISECONDS = 15000;
 
     private NetworkDiscoveryBroadcaster() {
         Random random = new Random();

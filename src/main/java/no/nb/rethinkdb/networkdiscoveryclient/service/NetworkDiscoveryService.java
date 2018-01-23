@@ -1,6 +1,7 @@
 package no.nb.rethinkdb.networkdiscoveryclient.service;
 
 import no.nb.rethinkdb.networkdiscoveryclient.config.MainConfig;
+import no.nb.rethinkdb.networkdiscoveryclient.model.ClientItem;
 import no.nb.rethinkdb.networkdiscoveryclient.repo.BuddiesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
     private List<InetAddress> inetAddresses;
     private BuddiesRepository buddiesRepository;
     private boolean runForever = true;
+    private long masterId = 0;
 
     @Autowired
     public NetworkDiscoveryService(MainConfig mainConfig , BuddiesRepository repository) {
@@ -96,6 +98,10 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
 
         while (runForever) {
             buddiesRepository.cleanupOldServersFromList();
+            Optional<ClientItem> masterFromOtherClients = buddiesRepository.getMasterFromOtherClients();
+            if (masterFromOtherClients.isPresent()) {
+                masterId = masterFromOtherClients.get().getId();
+            }
             byte[] buf = new byte[BUF_SIZE];
             DatagramPacket datagramPacket = new DatagramPacket(buf, BUF_SIZE);
             try {
@@ -103,14 +109,17 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
                 String data = new String(datagramPacket.getData());
                 if (data.startsWith(IDENTITY_STRING)) {
                     String hostaddr = datagramPacket.getAddress().getHostAddress();
-                    if (requestIsMe(hostaddr)) {
-                        continue;
-                    }
                     long id = NetworkDiscoveryBroadcaster.extractMasterNumberFromString(data);
                     buddiesRepository.addOrUpdateItem(hostaddr,id);
-                    continue;
                 } else if (data.startsWith(YOU_MAY_JOIN)) {
-                    System.out.println("I'm joining, and very satisfied with it.");
+                    System.out.println("I may join...");
+                    Process exec = Runtime.getRuntime().exec("watch -n 1 \"I'm a slave\"");
+                    if (exec.isAlive()) {
+                        System.out.println("I've joined");
+                    } else {
+                        System.out.println("I failed to join...");
+                    }
+
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);

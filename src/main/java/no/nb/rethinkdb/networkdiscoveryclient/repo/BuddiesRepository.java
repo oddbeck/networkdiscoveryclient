@@ -3,12 +3,11 @@ package no.nb.rethinkdb.networkdiscoveryclient.repo;
 import no.nb.rethinkdb.networkdiscoveryclient.model.ClientItem;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.DISCOVERY_BROADCAST_TIME_IN_MILISECONDS;
 
 /**
  * Created by oddb on 23.01.18.
@@ -18,8 +17,7 @@ import java.util.stream.Collectors;
 public class BuddiesRepository {
     private ReentrantLock lock;
     private List<ClientItem> otherClients = new ArrayList<>();
-    private static final int SERVER_MAX_LIFETIME = 60;
-
+    public static final int SERVER_MAX_LIFETIME = DISCOVERY_BROADCAST_TIME_IN_MILISECONDS*2;
     public List<ClientItem> getOtherClients() {
         return otherClients;
     }
@@ -34,6 +32,13 @@ public class BuddiesRepository {
         return l;
     }
 
+    public Optional<ClientItem> getMasterFromOtherClients() {
+        return
+            getOtherClients()
+            .stream()
+            .sorted(Comparator.comparingLong(ClientItem::getId).reversed())
+            .findFirst();
+    }
 
     public static boolean shouldRemoveClient(ClientItem ci, long timestamp) {
 

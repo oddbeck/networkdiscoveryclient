@@ -2,6 +2,7 @@ package no.nb.rethinkdb.networkdiscoveryclient.service;
 
 import org.junit.Test;
 
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.IDENTITY_STRING;
 import static org.junit.Assert.*;
 
 /**
@@ -14,7 +15,7 @@ public class NetworkDiscoveryBroadcasterTest {
 
 
         long number = 999999;
-        String message = NetworkDiscoveryService.IDENTITY_STRING + number;
+        String message = IDENTITY_STRING + number;
 
         assertEquals(number, NetworkDiscoveryBroadcaster.extractMasterNumberFromString(message));
 

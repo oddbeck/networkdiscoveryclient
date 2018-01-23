@@ -6,9 +6,9 @@ import no.nb.rethinkdb.networkdiscoveryclient.repo.BuddiesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,32 +46,35 @@ public class MasterServerDiscoverer implements Runnable {
                 break;
             }
         }
+        System.out.println("My ipaddress is: " + myIpAddress + ", and broadcast is: " + broadcastIp);
         broadcastIp = mainConfig.getBroadcastAddr();
+        Thread thread = new Thread(this);
+        thread.start();
     }
 
 
     @Override
     public void run() {
+        System.out.println("Starting the master election");
 
         while (!masterIsDefined) {
 
             if (serverlistStableCount > 3) {
-                Optional<ClientItem> first = buddiesRepository
-                    .getOtherClients()
-                    .stream()
-                    .sorted(Comparator.comparingLong(ClientItem::getId).reversed())
-                    .findFirst();
+                System.out.println("Stable count looks good. Let's start figuring out who's the master.");
+                Optional<ClientItem> first = buddiesRepository.getMasterFromOtherClients();
+
                 if (first.isPresent()) {
                     masterIpAddress = first.get().getIpAddress();
+                    System.out.println("Master's ip-address is: " + masterIpAddress + ", and mine is: " + myIpAddress);
                     if (masterIpAddress.equalsIgnoreCase(myIpAddress)) {
-                        //TODO: Inform the others that I'm the boss.
-                        try {
-                            NetworkDiscoveryBroadcaster.informOthers(YOU_MAY_JOIN + myIpAddress, broadcastIp);
-                        } catch (SocketException e) {
-                            e.printStackTrace();
-                        }
+                        startPrimaryJobAndInformOthers();
+                        System.out.println("I am master...");
+                        masterIsDefined = true;
+                    } else {
+                        System.out.println("I'm not master!");
+                        masterIsDefined = true;
                     }
-                }
+                }// we don't need this election anymore.
             } else {
                 if (buddiesRepository.getOtherClients().size() == serverListCount) {
                     serverlistStableCount++;
@@ -80,14 +83,28 @@ public class MasterServerDiscoverer implements Runnable {
                     serverListCount = buddiesRepository.getOtherClients().size();
                     serverlistStableCount = 0;
                 }
-                System.out.println("serverlistStablecount: " + serverlistStableCount + ", srvListcount: " + serverListCount);
-                try {
-                    Thread.sleep(15000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                System.out.println("!serverlistStablecount: " + serverlistStableCount + ", srvListcount: " + serverListCount);
+            }
+            try {
+                Thread.sleep(NetworkDiscoveryBroadcaster.DISCOVERY_BROADCAST_TIME_IN_MILISECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-
+        System.out.println("Done with the election!");
     }
+
+    private void startPrimaryJobAndInformOthers() {
+        try {
+            Process process = Runtime.getRuntime().exec("watch -n 1 \"echo " + masterIpAddress + "\"");
+            if (process.isAlive()) {
+                NetworkDiscoveryBroadcaster.informOthers(YOU_MAY_JOIN + myIpAddress, broadcastIp);
+            } else {
+                System.out.println("Process is not yet alive.");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
