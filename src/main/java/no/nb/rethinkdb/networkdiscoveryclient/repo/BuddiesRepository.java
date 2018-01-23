@@ -1,8 +1,8 @@
 package no.nb.rethinkdb.networkdiscoveryclient.repo;
 
 import no.nb.rethinkdb.networkdiscoveryclient.model.ClientItem;
+import org.springframework.stereotype.Repository;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 /**
  * Created by oddb on 23.01.18.
  */
+
+@Repository
 public class BuddiesRepository {
     private ReentrantLock lock;
     private List<ClientItem> otherClients = new ArrayList<>();

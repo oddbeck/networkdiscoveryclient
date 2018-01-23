@@ -1,6 +1,7 @@
 package no.nb.rethinkdb.networkdiscoveryclient.service;
 
 import no.nb.rethinkdb.networkdiscoveryclient.model.ClientItem;
+import no.nb.rethinkdb.networkdiscoveryclient.repo.BuddiesRepository;
 import org.junit.Test;
 
 import java.util.Calendar;
@@ -20,13 +21,13 @@ public class NetworkDiscoverySVCTest {
         long currentTimestamp = Calendar.getInstance().getTimeInMillis();
 
         ClientItem item = new ClientItem("whatever", timestamp);
-        assertFalse(NetworkDiscoverySVC.shouldRemoveClient(item,currentTimestamp));
+        assertFalse(BuddiesRepository.shouldRemoveClient(item,currentTimestamp));
 
         ClientItem oldItem = new ClientItem("whatever", timestamp-60);
-        assertTrue(NetworkDiscoverySVC.shouldRemoveClient(oldItem,currentTimestamp));
+        assertTrue(BuddiesRepository.shouldRemoveClient(oldItem,currentTimestamp));
 
         ClientItem itemFromTheFuture = new ClientItem("whatever", timestamp+600);
-        assertFalse(NetworkDiscoverySVC.shouldRemoveClient(itemFromTheFuture,currentTimestamp));
+        assertFalse(BuddiesRepository.shouldRemoveClient(itemFromTheFuture,currentTimestamp));
 
     }
 

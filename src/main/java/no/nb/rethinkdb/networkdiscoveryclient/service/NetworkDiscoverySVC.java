@@ -1,6 +1,9 @@
 package no.nb.rethinkdb.networkdiscoveryclient.service;
 
+import no.nb.rethinkdb.networkdiscoveryclient.config.MainConfig;
 import no.nb.rethinkdb.networkdiscoveryclient.repo.BuddiesRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.*;
@@ -9,23 +12,23 @@ import java.util.*;
 /**
  * Created by oddb on 22.01.18.
  */
+@Service
 public class NetworkDiscoverySVC implements Runnable, AutoCloseable {
 
     public static final String IDENTITY_STRING = "rethinkDB_identityString:";
     private final int BUF_SIZE = 1500;
-    private DatagramSocket c;
     private String ipRange;
     private long myId;
     private String myIpAddress = "undefined";
-    private DatagramSocket socket = null;
     private List<InetAddress> inetAddresses;
     private BuddiesRepository buddiesRepository;
     private boolean runForever = true;
 
-    public NetworkDiscoverySVC(String ipRange) {
+    @Autowired
+    public NetworkDiscoverySVC(MainConfig mainConfig , BuddiesRepository repository) {
 
-        buddiesRepository = new BuddiesRepository();
-        this.ipRange = ipRange;
+        buddiesRepository = repository;
+        this.ipRange = mainConfig.getIpRange();
         myId = new Random().nextLong();
         try {
             List<InetAddress> inetAddresses = NetworkInterfaceResolver.resolveAddresses();
@@ -81,6 +84,7 @@ public class NetworkDiscoverySVC implements Runnable, AutoCloseable {
             throw new RuntimeException("Unable to find a matching interface for iprange: " + ipRange);
         }
 
+        DatagramSocket socket;
         try {
             socket = new DatagramSocket(8888, InetAddress.getByName("0.0.0.0"));
             socket.setBroadcast(true);
