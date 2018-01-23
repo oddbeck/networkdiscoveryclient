@@ -71,7 +71,7 @@ public class NetworkDiscoverySVC implements Runnable {
             lock.lock();
             List<ClientItem> collect = otherClients
                 .stream()
-                .sorted(Comparator.comparingLong(ClientItem::getTimestamp))
+                .sorted(Comparator.comparingLong(ClientItem::getTimestamp).reversed())
                 .collect(Collectors.toList());
             otherClients = collect;
         } finally {
@@ -151,6 +151,7 @@ public class NetworkDiscoverySVC implements Runnable {
                 lock.unlock();
             }
         }
+        sortServerList();
     }
 
     @Override
