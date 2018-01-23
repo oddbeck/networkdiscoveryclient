@@ -7,15 +7,15 @@ import static org.junit.Assert.*;
 /**
  * Created by oddb on 22.01.18.
  */
-public class NetworkDiscoveryServiceTest {
+public class NetworkDiscoveryBroadcasterTest {
 
     @Test
     public void extractMasterNumberFromString() {
 
 
         long number = 999999;
-        String message = NetworkDiscoveryClient.IDENTITY_STRING + number;
+        String message = NetworkDiscoverySVC.IDENTITY_STRING + number;
 
-        assertEquals(number,NetworkDiscoveryService.extractMasterNumberFromString(message));
+        assertEquals(number, NetworkDiscoveryBroadcaster.extractMasterNumberFromString(message));
     }
 }

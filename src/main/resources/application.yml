@@ -1,0 +1,2 @@
+app.ipRange: 192.168.10.10
+app.broadcastAddr: 192.168.10.255

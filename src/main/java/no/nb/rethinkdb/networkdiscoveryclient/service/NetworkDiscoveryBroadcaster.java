@@ -1,15 +1,14 @@
 package no.nb.rethinkdb.networkdiscoveryclient.service;
 
-import java.io.IOException;
 import java.net.*;
 import java.util.Random;
 
-import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryClient.IDENTITY_STRING;
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoverySVC.IDENTITY_STRING;
 
 /**
  * Created by oddb on 22.01.18.
  */
-public class NetworkDiscoveryService implements Runnable {
+public class NetworkDiscoveryBroadcaster implements Runnable {
 
     private final long masterId;
     private boolean master = false;
@@ -18,12 +17,12 @@ public class NetworkDiscoveryService implements Runnable {
     private String broadcastIp;
     private String ipRange;
 
-    private NetworkDiscoveryService() {
+    private NetworkDiscoveryBroadcaster() {
         Random random = new Random();
         masterId = random.nextLong();
     }
 
-    public NetworkDiscoveryService(String broadcastIp, String iprange) {
+    public NetworkDiscoveryBroadcaster(String broadcastIp, String iprange) {
         this();
         this.broadcastIp = broadcastIp;
         this.ipRange = iprange;
@@ -64,7 +63,7 @@ public class NetworkDiscoveryService implements Runnable {
         try {
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(broadcastIp), 8888);
             querySocket.send(sendPacket);
-            System.out.println(">>> Request packet sent to: " + broadcastIp);
+            System.out.println(">>> I'mHere-broadcast sent to: " + broadcastIp);
         } catch (Exception e) {
             return null;
         }
