@@ -3,7 +3,6 @@ package no.nb.rethinkdb.networkdiscoveryclient.service;
 import java.net.*;
 import java.util.Random;
 
-import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoverySVC.IDENTITY_STRING;
 
 /**
  * Created by oddb on 22.01.18.
@@ -16,6 +15,11 @@ public class NetworkDiscoveryBroadcaster implements Runnable {
 
     private String broadcastIp;
     private String ipRange;
+
+    public static final String IDENTITY_STRING = "rethinkDB_identityString:";
+    public static final String YOU_MAY_JOIN = "rethinkDB_you_may_join:";
+
+    private final int DISCOVERY_BROADCAST_TIME_IN_MILISECONDS = 15000;
 
     private NetworkDiscoveryBroadcaster() {
         Random random = new Random();
@@ -56,11 +60,11 @@ public class NetworkDiscoveryBroadcaster implements Runnable {
     }
 
 
-    public DatagramSocket informOthers() throws SocketException {
+    public static DatagramSocket informOthers(String message, String broadcastIp) throws SocketException {
         DatagramSocket querySocket = new DatagramSocket();
         querySocket.setBroadcast(true);
 
-        byte[] sendData = (IDENTITY_STRING + masterId).getBytes();
+        byte[] sendData = message.getBytes();
 
         try {
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(broadcastIp), 8888);
@@ -72,6 +76,16 @@ public class NetworkDiscoveryBroadcaster implements Runnable {
         return querySocket;
     }
 
+
+    public DatagramSocket informOthers() throws SocketException {
+        DatagramSocket querySocket = new DatagramSocket();
+        querySocket.setBroadcast(true);
+
+        byte[] sendData = (IDENTITY_STRING + masterId).getBytes();
+        informOthers(new String(sendData), broadcastIp);
+        return querySocket;
+    }
+
     @Override
     public void run() {
 
@@ -80,7 +94,7 @@ public class NetworkDiscoveryBroadcaster implements Runnable {
             try {
                 informOthers();
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(DISCOVERY_BROADCAST_TIME_IN_MILISECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

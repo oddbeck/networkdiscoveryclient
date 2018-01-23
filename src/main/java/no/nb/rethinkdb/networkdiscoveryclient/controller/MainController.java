@@ -4,7 +4,7 @@ import no.nb.rethinkdb.networkdiscoveryclient.config.MainConfig;
 import no.nb.rethinkdb.networkdiscoveryclient.model.ClientItem;
 import no.nb.rethinkdb.networkdiscoveryclient.repo.BuddiesRepository;
 import no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster;
-import no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoverySVC;
+import no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -19,34 +19,29 @@ import java.util.List;
 @RestController
 public class MainController {
 
-    private NetworkDiscoveryBroadcaster broadcasterService;
-    private NetworkDiscoverySVC broadcastListenerService;
-    private Thread bcListenerThread;
-    private Thread discService;
     private BuddiesRepository buddiesRepository;
 
 
-
-    private MainConfig mainConfig;
-
     @Autowired
-    public MainController(MainConfig mainConfig, NetworkDiscoverySVC networkDiscoverySVC, BuddiesRepository buddiesRepository) {
-        this.mainConfig = mainConfig;
+    public MainController(MainConfig mainConfig, NetworkDiscoveryService networkDiscoveryService, BuddiesRepository buddiesRepository) {
         this.buddiesRepository = buddiesRepository;
-        this.broadcasterService = new NetworkDiscoveryBroadcaster(mainConfig.getBroadcastAddr(), mainConfig.getIpRange());
-        this.broadcastListenerService = networkDiscoverySVC;
+        NetworkDiscoveryBroadcaster broadcasterService =
+            new NetworkDiscoveryBroadcaster(mainConfig.getBroadcastAddr(), mainConfig.getIpRange());
 
-        this.bcListenerThread = new Thread(broadcastListenerService);
-        this.discService = new Thread(broadcasterService);
-        this.discService.start();
-        this.bcListenerThread.start();
+        Thread bcListenerThread = new Thread(networkDiscoveryService);
+        Thread discService = new Thread(broadcasterService);
+        discService.start();
+        bcListenerThread.start();
     }
 
     @GetMapping("/")
     public String showServers() {
-        String servers = buddiesRepository.getServersAsList();
-
-        return servers;
+        List<ClientItem> otherClients = buddiesRepository.getOtherClients();
+        StringBuffer sb = new StringBuffer();
+        for (ClientItem ci: otherClients) {
+            sb.append(" --join " + ci.getIpAddress());
+        }
+        return sb.toString();
     }
 
     @GetMapping("/rendered2")

@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 /**
  * Created by oddb on 23.01.18.
  */
-public class NetworkDiscoverySVCTest {
+public class NetworkDiscoveryServiceTest {
 
 
     @Test

@@ -9,13 +9,15 @@ import java.io.IOException;
 import java.net.*;
 import java.util.*;
 
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.IDENTITY_STRING;
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.YOU_MAY_JOIN;
+
 /**
  * Created by oddb on 22.01.18.
  */
 @Service
-public class NetworkDiscoverySVC implements Runnable, AutoCloseable {
+public class NetworkDiscoveryService implements Runnable, AutoCloseable {
 
-    public static final String IDENTITY_STRING = "rethinkDB_identityString:";
     private final int BUF_SIZE = 1500;
     private String ipRange;
     private long myId;
@@ -25,7 +27,7 @@ public class NetworkDiscoverySVC implements Runnable, AutoCloseable {
     private boolean runForever = true;
 
     @Autowired
-    public NetworkDiscoverySVC(MainConfig mainConfig , BuddiesRepository repository) {
+    public NetworkDiscoveryService(MainConfig mainConfig , BuddiesRepository repository) {
 
         buddiesRepository = repository;
         this.ipRange = mainConfig.getIpRange();
@@ -45,7 +47,7 @@ public class NetworkDiscoverySVC implements Runnable, AutoCloseable {
         System.out.println("I am: " + myIpAddress);
     }
 
-    private NetworkDiscoverySVC() {
+    private NetworkDiscoveryService() {
 
     }
 
@@ -106,6 +108,9 @@ public class NetworkDiscoverySVC implements Runnable, AutoCloseable {
                     }
                     long id = NetworkDiscoveryBroadcaster.extractMasterNumberFromString(data);
                     buddiesRepository.addOrUpdateItem(hostaddr,id);
+                    continue;
+                } else if (data.startsWith(YOU_MAY_JOIN)) {
+                    System.out.println("I'm joining, and very satisfied with it.");
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);

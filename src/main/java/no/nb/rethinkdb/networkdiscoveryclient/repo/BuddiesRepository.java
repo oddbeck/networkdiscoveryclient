@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 public class BuddiesRepository {
     private ReentrantLock lock;
     private List<ClientItem> otherClients = new ArrayList<>();
-    public static final String IDENTITY_STRING = "rethinkDB_identityString:";
     private static final int SERVER_MAX_LIFETIME = 60;
 
     public List<ClientItem> getOtherClients() {
@@ -57,24 +56,6 @@ public class BuddiesRepository {
         } finally {
             lock.unlock();
         }
-    }
-
-    public String getServersAsList() {
-
-        String servers = "";
-
-        try {
-            lock.lock();
-            for (ClientItem ci : otherClients) {
-                servers += ci.getIpAddress() + ";";
-            }
-        } finally {
-            if (lock.isLocked()) {
-                lock.unlock();
-            }
-        }
-
-        return servers;
     }
 
     public void addOrUpdateItem(String hostaddr, long id) {

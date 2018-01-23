@@ -14,7 +14,7 @@ public class NetworkDiscoveryBroadcasterTest {
 
 
         long number = 999999;
-        String message = NetworkDiscoverySVC.IDENTITY_STRING + number;
+        String message = NetworkDiscoveryService.IDENTITY_STRING + number;
 
         assertEquals(number, NetworkDiscoveryBroadcaster.extractMasterNumberFromString(message));
 
