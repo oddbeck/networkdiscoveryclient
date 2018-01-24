@@ -96,7 +96,8 @@ public class MasterServerDiscoverer implements Runnable {
 
     private void startPrimaryJobAndInformOthers() {
         try {
-            Process process = Runtime.getRuntime().exec("watch -n 1 \"echo " + masterIpAddress + "\"");
+
+            Process process = Runtime.getRuntime().exec("touch /master.log".split(" "));
             if (process.isAlive()) {
                 NetworkDiscoveryBroadcaster.informOthers(YOU_MAY_JOIN + myIpAddress, broadcastIp);
             } else {

@@ -17,7 +17,7 @@ import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBro
 public class BuddiesRepository {
     private ReentrantLock lock;
     private List<ClientItem> otherClients = new ArrayList<>();
-    public static final int SERVER_MAX_LIFETIME = DISCOVERY_BROADCAST_TIME_IN_MILISECONDS*2;
+    public static final int SERVER_MAX_LIFETIME_MILISECONDS = DISCOVERY_BROADCAST_TIME_IN_MILISECONDS*2;
     public List<ClientItem> getOtherClients() {
         return otherClients;
     }
@@ -42,7 +42,7 @@ public class BuddiesRepository {
 
     public static boolean shouldRemoveClient(ClientItem ci, long timestamp) {
 
-        if ((ci.getTimestamp() + SERVER_MAX_LIFETIME) < timestamp) {
+        if ((ci.getTimestamp() + (SERVER_MAX_LIFETIME_MILISECONDS /1000)) < timestamp) {
             return true;
         }
         return false;

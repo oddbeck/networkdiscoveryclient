@@ -112,12 +112,20 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
                     long id = NetworkDiscoveryBroadcaster.extractMasterNumberFromString(data);
                     buddiesRepository.addOrUpdateItem(hostaddr,id);
                 } else if (data.startsWith(YOU_MAY_JOIN)) {
-                    System.out.println("I may join...");
-                    Process exec = Runtime.getRuntime().exec("watch -n 1 \"I'm a slave\"");
-                    if (exec.isAlive()) {
-                        System.out.println("I've joined");
+
+                    if (buddiesRepository.getMasterFromOtherClients().isPresent()) {
+                        ClientItem masterClient = buddiesRepository.getMasterFromOtherClients().get();
+                        if (!masterClient.getIpAddress().equalsIgnoreCase(myIpAddress)) {
+                            System.out.println("I may join...my id is: " + myId + ", and master is : " +masterClient.getId());
+                            Process exec = Runtime.getRuntime().exec("touch /slave.log".split(" "));
+                            if (exec.isAlive()) {
+                                System.out.println("I've joined");
+                            } else {
+                                System.out.println("I failed to join...");
+                            }
+                        }
                     } else {
-                        System.out.println("I failed to join...");
+                        System.out.println("I am master, so I don't care to join. I've started my own process.");
                     }
 
                 }

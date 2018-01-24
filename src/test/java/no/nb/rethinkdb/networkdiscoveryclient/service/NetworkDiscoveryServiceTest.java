@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import java.util.Calendar;
 
-import static no.nb.rethinkdb.networkdiscoveryclient.repo.BuddiesRepository.SERVER_MAX_LIFETIME;
+import static no.nb.rethinkdb.networkdiscoveryclient.repo.BuddiesRepository.SERVER_MAX_LIFETIME_MILISECONDS;
 import static org.junit.Assert.*;
 
 /**
@@ -24,7 +24,7 @@ public class NetworkDiscoveryServiceTest {
         ClientItem item = new ClientItem("whatever", timestamp, 10);
         assertFalse(BuddiesRepository.shouldRemoveClient(item,currentTimestamp));
 
-        ClientItem oldItem = new ClientItem("whatever", timestamp-SERVER_MAX_LIFETIME,10);
+        ClientItem oldItem = new ClientItem("whatever", timestamp- SERVER_MAX_LIFETIME_MILISECONDS,10);
         assertTrue(BuddiesRepository.shouldRemoveClient(oldItem,currentTimestamp));
 
         ClientItem itemFromTheFuture = new ClientItem("whatever", timestamp+600,10);
