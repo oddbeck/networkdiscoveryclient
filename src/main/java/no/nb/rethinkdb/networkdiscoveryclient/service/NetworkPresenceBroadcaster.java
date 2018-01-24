@@ -7,7 +7,7 @@ import java.util.Random;
 /**
  * Created by oddb on 22.01.18.
  */
-public class NetworkDiscoveryBroadcaster implements Runnable {
+public class NetworkPresenceBroadcaster implements Runnable {
 
     private final long masterId;
     private boolean master = false;
@@ -25,12 +25,12 @@ public class NetworkDiscoveryBroadcaster implements Runnable {
 
     public static final int DISCOVERY_BROADCAST_TIME_IN_MILISECONDS = 15000;
 
-    private NetworkDiscoveryBroadcaster() {
+    private NetworkPresenceBroadcaster() {
         Random random = new Random();
         masterId = random.nextLong();
     }
 
-    public NetworkDiscoveryBroadcaster(String broadcastIp, String iprange) {
+    public NetworkPresenceBroadcaster(String broadcastIp, String iprange) {
         this();
         this.broadcastIp = broadcastIp;
         this.ipRange = iprange;

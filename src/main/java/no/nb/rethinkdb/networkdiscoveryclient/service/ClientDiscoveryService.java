@@ -8,15 +8,17 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 
-import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.*;
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkPresenceBroadcaster.*;
 
 /**
  * Created by oddb on 22.01.18.
  */
 @Service
-public class NetworkDiscoveryService implements Runnable, AutoCloseable {
+public class ClientDiscoveryService implements Runnable, AutoCloseable {
 
     public final static int BUF_SIZE = 1500;
     private String ipRange;
@@ -25,11 +27,11 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
     private List<InetAddress> inetAddresses;
     private BuddiesRepository buddiesRepository;
     private boolean runForever = true;
-    private long masterId = 0;
     private MainConfig mainConfig;
+    private boolean joinDirectly = false;
 
     @Autowired
-    public NetworkDiscoveryService(MainConfig mainConfig , BuddiesRepository repository) {
+    public ClientDiscoveryService(MainConfig mainConfig, BuddiesRepository repository) {
 
         this.mainConfig = mainConfig;
         buddiesRepository = repository;
@@ -50,11 +52,19 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
         System.out.println("I am: " + myIpAddress);
     }
 
-    private NetworkDiscoveryService() {
+    private ClientDiscoveryService() {
 
     }
 
-   @Override
+    public boolean isJoinDirectly() {
+        return joinDirectly;
+    }
+
+    public void setJoinDirectly(boolean joinDirectly) {
+        this.joinDirectly = joinDirectly;
+    }
+
+    @Override
     public void run() {
 
         boolean foundMatchingInterface = false;
@@ -82,43 +92,56 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
         }
 
         while (runForever) {
+
             buddiesRepository.cleanupOldServersFromList();
-            Optional<ClientItem> masterFromOtherClients = buddiesRepository.getMasterFromOtherClients();
-            if (masterFromOtherClients.isPresent()) {
-                masterId = masterFromOtherClients.get().getId();
-            }
+
             byte[] buf = new byte[BUF_SIZE];
             DatagramPacket datagramPacket = new DatagramPacket(buf, BUF_SIZE);
+
+            // figure out what message is sent on the network:
             try {
                 socket.receive(datagramPacket);
                 String data = new String(datagramPacket.getData());
+
+                // is this a 'newcomter' query?
                 if (data.startsWith(IS_CLUSTER_ALREADY_RUNNING)) {
-                    NetworkDiscoveryBroadcaster.informOthers(YES_CLUSTER_IS_ALREADY_RUNNING,mainConfig.getBroadcastAddr());
+                    System.out.println("Telling the newcomer that we're here.");
+                    NetworkPresenceBroadcaster.informOthers(YES_CLUSTER_IS_ALREADY_RUNNING, mainConfig.getBroadcastAddr());
                     continue;
                 }
+                // is this a regular identity broadcast?
                 if (data.startsWith(IDENTITY_STRING)) {
                     String hostaddr = datagramPacket.getAddress().getHostAddress();
-                    long id = NetworkDiscoveryBroadcaster.extractMasterNumberFromString(data);
-                    buddiesRepository.addOrUpdateItem(hostaddr,id);
+                    long id = NetworkPresenceBroadcaster.extractMasterNumberFromString(data);
+                    buddiesRepository.addOrUpdateItem(hostaddr, id);
+                    if (joinDirectly) {
+                        joinDirectly = false;
+                        System.out.println("Joining directly, not waiting for a join command.");
+                        startSlaveJobsAndSetAlreadyRunning();
+                    }
                     continue;
                 }
+                // is this a message from the 'master' telling us to join him?
                 if (!buddiesRepository.isServerAlreadyRunning() && data.startsWith(YOU_MAY_JOIN)) {
                     if (buddiesRepository.getMasterFromOtherClients().isPresent()) {
                         ClientItem masterClient = buddiesRepository.getMasterFromOtherClients().get();
                         if (!masterClient.getIpAddress().equalsIgnoreCase(myIpAddress)) {
-                            System.out.println("I may join...my id is: " + myId + ", and master is : " +masterClient.getId());
-                            startSlaveJobs();
+                            System.out.println("I may join...my id is: " + myId + ", and master is : " + masterClient.getId());
+                            startSlaveJobsAndSetAlreadyRunning();
                         }
                     } else {
                         System.out.println("I am master, so I don't care to join. I've started my own process.");
                     }
-                    buddiesRepository.setServerAlreadyRunning(true);
-                    continue;
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private void startSlaveJobsAndSetAlreadyRunning() throws IOException {
+        startSlaveJobs();
+        buddiesRepository.setServerAlreadyRunning(true);
     }
 
     private void startSlaveJobs() throws IOException {

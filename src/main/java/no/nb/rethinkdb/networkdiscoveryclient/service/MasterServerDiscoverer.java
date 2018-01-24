@@ -12,7 +12,7 @@ import java.net.SocketException;
 import java.util.List;
 import java.util.Optional;
 
-import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.YOU_MAY_JOIN;
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkPresenceBroadcaster.YOU_MAY_JOIN;
 
 /**
  * Created by oddb on 23.01.18.
@@ -89,7 +89,7 @@ public class MasterServerDiscoverer implements Runnable {
                 System.out.println("!serverlistStablecount: " + serverlistStableCount + ", srvListcount: " + serverListCount);
             }
             try {
-                Thread.sleep(NetworkDiscoveryBroadcaster.DISCOVERY_BROADCAST_TIME_IN_MILISECONDS);
+                Thread.sleep(NetworkPresenceBroadcaster.DISCOVERY_BROADCAST_TIME_IN_MILISECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -102,7 +102,7 @@ public class MasterServerDiscoverer implements Runnable {
 
             Process process = Runtime.getRuntime().exec("touch /master.log".split(" "));
             if (process.isAlive()) {
-                NetworkDiscoveryBroadcaster.informOthers(YOU_MAY_JOIN + myIpAddress, broadcastIp);
+                NetworkPresenceBroadcaster.informOthers(YOU_MAY_JOIN + myIpAddress, broadcastIp);
             } else {
                 System.out.println("Process is not yet alive.");
             }

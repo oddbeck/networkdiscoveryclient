@@ -1,10 +1,7 @@
 package no.nb.rethinkdb.networkdiscoveryclient.controller;
 
-import no.nb.rethinkdb.networkdiscoveryclient.config.MainConfig;
 import no.nb.rethinkdb.networkdiscoveryclient.model.ClientItem;
 import no.nb.rethinkdb.networkdiscoveryclient.repo.BuddiesRepository;
-import no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster;
-import no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;

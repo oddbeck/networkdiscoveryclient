@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.DISCOVERY_BROADCAST_TIME_IN_MILISECONDS;
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkPresenceBroadcaster.DISCOVERY_BROADCAST_TIME_IN_MILISECONDS;
 
 /**
  * Created by oddb on 23.01.18.
