@@ -19,11 +19,10 @@ public class NetworkPresenceBroadcaster implements Runnable {
     private static final String SERVICE_NAME = "RethinkDb_";
 
     public static final String IDENTITY_STRING = SERVICE_NAME + "identityString:";
-    public static final String YOU_MAY_JOIN = SERVICE_NAME + "you_may_join:";
+    public static final String YOU_MAY_JOIN_THE_CLUSTER = SERVICE_NAME + "you_may_join:";
     public static final String IS_CLUSTER_ALREADY_RUNNING = SERVICE_NAME + "is_cluster_running:";
-    public static final String YES_CLUSTER_IS_ALREADY_RUNNING = SERVICE_NAME + "yes_cluster_is_running:";
 
-    public static final int DISCOVERY_BROADCAST_TIME_IN_MILISECONDS = 15000;
+    public static final int DISCOVERY_BROADCAST_TIME_IN_MILLISECONDS = 15000;
 
     private NetworkPresenceBroadcaster() {
         Random random = new Random();
@@ -98,7 +97,7 @@ public class NetworkPresenceBroadcaster implements Runnable {
             try {
                 informOthers();
                 try {
-                    Thread.sleep(DISCOVERY_BROADCAST_TIME_IN_MILISECONDS);
+                    Thread.sleep(DISCOVERY_BROADCAST_TIME_IN_MILLISECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

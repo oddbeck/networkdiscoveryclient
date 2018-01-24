@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.net.*;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
 import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkPresenceBroadcaster.*;
@@ -28,7 +27,6 @@ public class ClientDiscoveryService implements Runnable, AutoCloseable {
     private BuddiesRepository buddiesRepository;
     private boolean runForever = true;
     private MainConfig mainConfig;
-    private boolean joinDirectly = false;
 
     @Autowired
     public ClientDiscoveryService(MainConfig mainConfig, BuddiesRepository repository) {
@@ -54,14 +52,6 @@ public class ClientDiscoveryService implements Runnable, AutoCloseable {
 
     private ClientDiscoveryService() {
 
-    }
-
-    public boolean isJoinDirectly() {
-        return joinDirectly;
-    }
-
-    public void setJoinDirectly(boolean joinDirectly) {
-        this.joinDirectly = joinDirectly;
     }
 
     @Override
@@ -103,10 +93,10 @@ public class ClientDiscoveryService implements Runnable, AutoCloseable {
                 socket.receive(datagramPacket);
                 String data = new String(datagramPacket.getData());
 
-                // is this a 'newcomter' query?
-                if (data.startsWith(IS_CLUSTER_ALREADY_RUNNING)) {
-                    System.out.println("Telling the newcomer that we're here.");
-                    NetworkPresenceBroadcaster.informOthers(YES_CLUSTER_IS_ALREADY_RUNNING, mainConfig.getBroadcastAddr());
+                // is this a 'newcomer' query, and have we decided on the master yet?
+                if (buddiesRepository.isMasterSet() && data.startsWith(IS_CLUSTER_ALREADY_RUNNING)) {
+                    System.out.println("Telling the newcomer that we're here, and he can join us.");
+                    NetworkPresenceBroadcaster.informOthers(YOU_MAY_JOIN_THE_CLUSTER + myIpAddress, mainConfig.getBroadcastAddr());
                     continue;
                 }
                 // is this a regular identity broadcast?
@@ -114,16 +104,16 @@ public class ClientDiscoveryService implements Runnable, AutoCloseable {
                     String hostaddr = datagramPacket.getAddress().getHostAddress();
                     long id = NetworkPresenceBroadcaster.extractMasterNumberFromString(data);
                     buddiesRepository.addOrUpdateItem(hostaddr, id);
-                    if (joinDirectly) {
-                        joinDirectly = false;
+                    if (!buddiesRepository.isServerAlreadyRunning() && buddiesRepository.isMasterSet()) {
                         System.out.println("Joining directly, not waiting for a join command.");
                         startSlaveJobsAndSetAlreadyRunning();
                     }
                     continue;
                 }
                 // is this a message from the 'master' telling us to join him?
-                if (!buddiesRepository.isServerAlreadyRunning() && data.startsWith(YOU_MAY_JOIN)) {
+                if (data.startsWith(YOU_MAY_JOIN_THE_CLUSTER) && !buddiesRepository.isServerAlreadyRunning() ) {
                     if (buddiesRepository.getMasterFromOtherClients().isPresent()) {
+                        buddiesRepository.setMasterSet(true);
                         ClientItem masterClient = buddiesRepository.getMasterFromOtherClients().get();
                         if (!masterClient.getIpAddress().equalsIgnoreCase(myIpAddress)) {
                             System.out.println("I may join...my id is: " + myId + ", and master is : " + masterClient.getId());

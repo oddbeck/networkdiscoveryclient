@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkPresenceBroadcaster.DISCOVERY_BROADCAST_TIME_IN_MILISECONDS;
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkPresenceBroadcaster.DISCOVERY_BROADCAST_TIME_IN_MILLISECONDS;
 
 /**
  * Created by oddb on 23.01.18.
@@ -15,19 +15,12 @@ import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkPresenceBroa
 
 @Repository
 public class BuddiesRepository {
-    public static final int SERVER_MAX_LIFETIME_MILISECONDS = DISCOVERY_BROADCAST_TIME_IN_MILISECONDS * 2;
+    public static final int SERVER_MAX_LIFETIME_MILISECONDS = DISCOVERY_BROADCAST_TIME_IN_MILLISECONDS * 2;
     private ReentrantLock lock;
     private List<ClientItem> otherClients = new ArrayList<>();
     private boolean killService = false;
     private boolean serverAlreadyRunning = false;
-
-    public boolean isServerAlreadyRunning() {
-        return serverAlreadyRunning;
-    }
-
-    public void setServerAlreadyRunning(boolean serverAlreadyRunning) {
-        this.serverAlreadyRunning = serverAlreadyRunning;
-    }
+    private boolean masterSet = false;
 
     public BuddiesRepository() {
         this.lock = new ReentrantLock();
@@ -45,6 +38,22 @@ public class BuddiesRepository {
             return true;
         }
         return false;
+    }
+
+    public boolean isMasterSet() {
+        return masterSet;
+    }
+
+    public void setMasterSet(boolean masterSet) {
+        this.masterSet = masterSet;
+    }
+
+    public boolean isServerAlreadyRunning() {
+        return serverAlreadyRunning;
+    }
+
+    public void setServerAlreadyRunning(boolean serverAlreadyRunning) {
+        this.serverAlreadyRunning = serverAlreadyRunning;
     }
 
     public boolean isKillService() {
