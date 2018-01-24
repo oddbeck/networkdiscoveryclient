@@ -15,11 +15,18 @@ import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBro
 
 @Repository
 public class BuddiesRepository {
+    public static final int SERVER_MAX_LIFETIME_MILISECONDS = DISCOVERY_BROADCAST_TIME_IN_MILISECONDS * 2;
     private ReentrantLock lock;
     private List<ClientItem> otherClients = new ArrayList<>();
-    public static final int SERVER_MAX_LIFETIME_MILISECONDS = DISCOVERY_BROADCAST_TIME_IN_MILISECONDS*2;
-    public List<ClientItem> getOtherClients() {
-        return otherClients;
+    private boolean killService = false;
+    private boolean serverAlreadyRunning = false;
+
+    public boolean isServerAlreadyRunning() {
+        return serverAlreadyRunning;
+    }
+
+    public void setServerAlreadyRunning(boolean serverAlreadyRunning) {
+        this.serverAlreadyRunning = serverAlreadyRunning;
     }
 
     public BuddiesRepository() {
@@ -32,23 +39,33 @@ public class BuddiesRepository {
         return l;
     }
 
-    public Optional<ClientItem> getMasterFromOtherClients() {
-        return
-            getOtherClients()
-            .stream()
-            .sorted(Comparator.comparingLong(ClientItem::getId).reversed())
-            .findFirst();
-    }
-
     public static boolean shouldRemoveClient(ClientItem ci, long timestamp) {
 
-        if ((ci.getTimestamp() + (SERVER_MAX_LIFETIME_MILISECONDS /1000)) < timestamp) {
+        if ((ci.getTimestamp() + (SERVER_MAX_LIFETIME_MILISECONDS / 1000)) < timestamp) {
             return true;
         }
         return false;
     }
 
+    public boolean isKillService() {
+        return killService;
+    }
 
+    public void setKillService(boolean killService) {
+        this.killService = killService;
+    }
+
+    public List<ClientItem> getOtherClients() {
+        return otherClients;
+    }
+
+    public Optional<ClientItem> getMasterFromOtherClients() {
+        return
+            getOtherClients()
+                .stream()
+                .sorted(Comparator.comparingLong(ClientItem::getId).reversed())
+                .findFirst();
+    }
 
     private void sortServerList() {
         try {
@@ -80,7 +97,7 @@ public class BuddiesRepository {
             }
         } catch (Exception e) {
 
-        }finally {
+        } finally {
             if (lock.isLocked()) {
                 lock.unlock();
             }

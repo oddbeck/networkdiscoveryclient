@@ -16,8 +16,12 @@ public class NetworkDiscoveryBroadcaster implements Runnable {
     private String broadcastIp;
     private String ipRange;
 
-    public static final String IDENTITY_STRING = "rethinkDB_identityString:";
-    public static final String YOU_MAY_JOIN = "rethinkDB_you_may_join:";
+    private static final String SERVICE_NAME = "RethinkDb_";
+
+    public static final String IDENTITY_STRING = SERVICE_NAME + "identityString:";
+    public static final String YOU_MAY_JOIN = SERVICE_NAME + "you_may_join:";
+    public static final String IS_CLUSTER_ALREADY_RUNNING = SERVICE_NAME + "is_cluster_running:";
+    public static final String YES_CLUSTER_IS_ALREADY_RUNNING = SERVICE_NAME + "yes_cluster_is_running:";
 
     public static final int DISCOVERY_BROADCAST_TIME_IN_MILISECONDS = 15000;
 

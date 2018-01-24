@@ -26,10 +26,9 @@ public class MasterServerDiscoverer implements Runnable {
     private BuddiesRepository buddiesRepository;
     private int serverlistStableCount = 0;
     private int serverListCount = -1;
-    private Thread runner;
     private String myIpAddress = "undefined";
     private String masterIpAddress = "undefined";
-    private String broadcastIp = "undefined";
+    private String broadcastIp;
 
     @Autowired
     public MasterServerDiscoverer(BuddiesRepository buddiesRepository, MainConfig mainConfig) {
@@ -52,6 +51,9 @@ public class MasterServerDiscoverer implements Runnable {
         thread.start();
     }
 
+    public void setMasterIsDefined(boolean masterIsDefined) {
+        this.masterIsDefined = masterIsDefined;
+    }
 
     @Override
     public void run() {
@@ -67,6 +69,7 @@ public class MasterServerDiscoverer implements Runnable {
                     masterIpAddress = first.get().getIpAddress();
                     System.out.println("Master's ip-address is: " + masterIpAddress + ", and mine is: " + myIpAddress);
                     if (masterIpAddress.equalsIgnoreCase(myIpAddress)) {
+                        buddiesRepository.setServerAlreadyRunning(true);
                         startPrimaryJobAndInformOthers();
                         System.out.println("I am master...");
                         masterIsDefined = true;

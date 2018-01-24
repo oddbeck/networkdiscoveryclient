@@ -23,22 +23,15 @@ public class MainController {
 
 
     @Autowired
-    public MainController(MainConfig mainConfig, NetworkDiscoveryService networkDiscoveryService, BuddiesRepository buddiesRepository) {
+    public MainController(BuddiesRepository buddiesRepository) {
         this.buddiesRepository = buddiesRepository;
-        NetworkDiscoveryBroadcaster broadcasterService =
-            new NetworkDiscoveryBroadcaster(mainConfig.getBroadcastAddr(), mainConfig.getIpRange());
-
-        Thread bcListenerThread = new Thread(networkDiscoveryService);
-        Thread discService = new Thread(broadcasterService);
-        discService.start();
-        bcListenerThread.start();
     }
 
     @GetMapping("/")
     public String showServers() {
         List<ClientItem> otherClients = buddiesRepository.getOtherClients();
         StringBuffer sb = new StringBuffer();
-        for (ClientItem ci: otherClients) {
+        for (ClientItem ci : otherClients) {
             sb.append(" --join " + ci.getIpAddress());
         }
         return sb.toString();

@@ -10,8 +10,7 @@ import java.io.IOException;
 import java.net.*;
 import java.util.*;
 
-import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.IDENTITY_STRING;
-import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.YOU_MAY_JOIN;
+import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBroadcaster.*;
 
 /**
  * Created by oddb on 22.01.18.
@@ -19,7 +18,7 @@ import static no.nb.rethinkdb.networkdiscoveryclient.service.NetworkDiscoveryBro
 @Service
 public class NetworkDiscoveryService implements Runnable, AutoCloseable {
 
-    private final int BUF_SIZE = 1500;
+    public final static int BUF_SIZE = 1500;
     private String ipRange;
     private long myId;
     private String myIpAddress = "undefined";
@@ -27,10 +26,12 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
     private BuddiesRepository buddiesRepository;
     private boolean runForever = true;
     private long masterId = 0;
+    private MainConfig mainConfig;
 
     @Autowired
     public NetworkDiscoveryService(MainConfig mainConfig , BuddiesRepository repository) {
 
+        this.mainConfig = mainConfig;
         buddiesRepository = repository;
         this.ipRange = mainConfig.getIpRange();
         myId = new Random().nextLong();
@@ -53,23 +54,7 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
 
     }
 
-    /*
-    Når antallet pods/servere er stabilt så blir de enige om hvem som er master vha høyest ID, og så
-    starter han rethinkdb-tjenesten sin først og venter på at den er oppe, så får de andre beskjed
-    om å starte sine ved å bruke 'join'-parameteren.
-     */
-
-    private boolean requestIsMe(String address) {
-        for (InetAddress adr : inetAddresses) {
-            if (adr.getHostAddress().equalsIgnoreCase(address)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    @Override
+   @Override
     public void run() {
 
         boolean foundMatchingInterface = false;
@@ -107,31 +92,41 @@ public class NetworkDiscoveryService implements Runnable, AutoCloseable {
             try {
                 socket.receive(datagramPacket);
                 String data = new String(datagramPacket.getData());
+                if (data.startsWith(IS_CLUSTER_ALREADY_RUNNING)) {
+                    NetworkDiscoveryBroadcaster.informOthers(YES_CLUSTER_IS_ALREADY_RUNNING,mainConfig.getBroadcastAddr());
+                    continue;
+                }
                 if (data.startsWith(IDENTITY_STRING)) {
                     String hostaddr = datagramPacket.getAddress().getHostAddress();
                     long id = NetworkDiscoveryBroadcaster.extractMasterNumberFromString(data);
                     buddiesRepository.addOrUpdateItem(hostaddr,id);
-                } else if (data.startsWith(YOU_MAY_JOIN)) {
-
+                    continue;
+                }
+                if (!buddiesRepository.isServerAlreadyRunning() && data.startsWith(YOU_MAY_JOIN)) {
                     if (buddiesRepository.getMasterFromOtherClients().isPresent()) {
                         ClientItem masterClient = buddiesRepository.getMasterFromOtherClients().get();
                         if (!masterClient.getIpAddress().equalsIgnoreCase(myIpAddress)) {
                             System.out.println("I may join...my id is: " + myId + ", and master is : " +masterClient.getId());
-                            Process exec = Runtime.getRuntime().exec("touch /slave.log".split(" "));
-                            if (exec.isAlive()) {
-                                System.out.println("I've joined");
-                            } else {
-                                System.out.println("I failed to join...");
-                            }
+                            startSlaveJobs();
                         }
                     } else {
                         System.out.println("I am master, so I don't care to join. I've started my own process.");
                     }
-
+                    buddiesRepository.setServerAlreadyRunning(true);
+                    continue;
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private void startSlaveJobs() throws IOException {
+        Process exec = Runtime.getRuntime().exec("touch /slave.log".split(" "));
+        if (exec.isAlive()) {
+            System.out.println("I've joined");
+        } else {
+            System.out.println("I failed to join...");
         }
     }
 
